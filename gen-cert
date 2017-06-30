@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+if [ $# -ne 2 ]; then
+	echo "Usage: $0 name role"
+	exit 1
+fi
+if [ -e "$1.key" -o -e "$1.csr" -o -e "$1.crt" ]; then
+	echo "Error: $1 already exists"
+	exit 1
+fi
+if [ "$2" != "client" -a "$2" != "server" ]; then
+	echo "Usage: $0 name role"
+	exit 1
+fi
+openssl ecparam -genkey -name secp384r1 -out "$1.key"
+openssl req -new -SHA384 -key "$1.key" -nodes -out "$1.csr" -config certs.conf
+serial="$(./get-serial "$1")" 
+openssl x509 -req -SHA384 -days 3650 -in "$1.csr" -CA ca.crt -CAkey ca.key -set_serial "$serial" -out "$1.crt" -extfile certs.conf -extensions "$2"
+openssl x509 -text -noout < "$1.crt"

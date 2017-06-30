@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+if [ -e ca.key -o -e ca.crt ]
+then
+	echo "Error: CA already exists"
+	exit 1
+fi
+openssl ecparam -genkey -name secp384r1 -out ca.key
+openssl req -x509 -new -SHA384 -nodes -key ca.key -days 3650 -out ca.crt -config certs.conf -extensions ca -set_serial "$(./get-serial ca)"
+openssl x509 -text -noout < "ca.crt"
